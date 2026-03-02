@@ -9591,10 +9591,9 @@ loadGlobalRules();
     ]
   };
 
-  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manifestUrl = URL.createObjectURL(manifestBlob);
+  // Write manifest inline as a data URI — more reliable than blob URLs on GitHub Pages
   const manifestLink = document.getElementById('pwa-manifest');
-  if (manifestLink) manifestLink.href = manifestUrl;
+  if (manifestLink) manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
 
   // ── Service Worker (inline as blob) ──
   const SW_CODE = `
@@ -9655,15 +9654,13 @@ self.addEventListener('fetch', e => {
 `;
 
   if ('serviceWorker' in navigator) {
-    const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl, { scope: './' })
+    // Register the real sw.js file (must be uploaded alongside index.html)
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
       .then(reg => {
         console.log('[Chronicler] Service worker registered:', reg.scope);
       })
       .catch(err => {
-        // Fails silently on file:// — that's expected
-        console.log('[Chronicler] SW not available (file:// protocol?):', err.message);
+        console.log('[Chronicler] SW not available:', err.message);
       });
   }
 
